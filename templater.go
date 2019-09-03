@@ -48,6 +48,14 @@ func (t *Templater) Render(wr io.Writer, name string, data interface{}) error {
 	return t.template.ExecuteTemplate(wr, name, data)
 }
 
+func (t *Templater) RenderToByteArray(name string, data interface{}) ([]byte, error) {
+	buffer := new(bytes.Buffer)
+	if err := t.Render(buffer, name, data); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
 func (t *Templater) RenderToString(name string, data interface{}) (string, error) {
 	buffer := new(bytes.Buffer)
 	if err := t.Render(buffer, name, data); err != nil {
