@@ -6,16 +6,18 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 )
 
 //Templater instance to perform hot reload on Go instance
 type Templater struct {
-	logger    *log.Logger
-	template  *template.Template
-	builder   *templaterBuilder
-	watcher   *templaterWatcher
-	hotReload bool
-	outputDir string
+	logger     *log.Logger
+	template   *template.Template
+	builder    *templaterBuilder
+	watcher    *templaterWatcher
+	hotReload  bool
+	outputDir  string
+	bufferPool *sync.Pool
 }
 
 func (t *Templater) Run() {
@@ -49,18 +51,24 @@ func (t *Templater) Render(wr io.Writer, name string, data interface{}) error {
 }
 
 func (t *Templater) RenderToByteArray(name string, data interface{}) ([]byte, error) {
-	buffer := new(bytes.Buffer)
+	buffer := t.bufferPool.Get().(*bytes.Buffer)
 	if err := t.Render(buffer, name, data); err != nil {
 		return nil, err
 	}
-	return buffer.Bytes(), nil
+	defer buffer.Reset()
+	resBuffer := make([]byte, buffer.Len())
+	copy(resBuffer, buffer.Bytes())
+	defer t.bufferPool.Put(buffer)
+	return resBuffer, nil
 }
 
 func (t *Templater) RenderToString(name string, data interface{}) (string, error) {
-	buffer := new(bytes.Buffer)
+	buffer := t.bufferPool.Get().(*bytes.Buffer)
 	if err := t.Render(buffer, name, data); err != nil {
 		return "", err
 	}
+	defer buffer.Reset()
+	defer t.bufferPool.Put(buffer)
 	return buffer.String(), nil
 }
 
@@ -72,6 +80,11 @@ func NewTemplater(conf *Config) *Templater {
 	instance.logger = log.New(os.Stdout, "[GO-TEMPLATER] ", log.Ltime)
 	instance.builder = newTemplaterBuilder(conf.InputDir, conf.OutputDir, instance.logger)
 	instance.watcher = newTemplaterWatcher(conf.InputDir, instance.logger)
+	instance.bufferPool = new(sync.Pool)
+	instance.bufferPool.New = func() interface{} {
+		byteBuffer := make([]byte, 0)
+		return bytes.NewBuffer(byteBuffer)
+	}
 	if conf.AutoReload {
 		rebuildEv := func(data string) {
 			instance.reload()
