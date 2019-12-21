@@ -18,6 +18,7 @@ type Templater struct {
 	hotReload  bool
 	outputDir  string
 	bufferPool *sync.Pool
+	funcMap    template.FuncMap
 }
 
 func (t *Templater) Run() {
@@ -42,6 +43,7 @@ func (t *Templater) reload() {
 		log.Println(err.Error())
 		return
 	}
+	newTemplate.Funcs(t.funcMap)
 	t.template = newTemplate
 	t.logger.Println("Templater reloaded")
 }
@@ -80,6 +82,7 @@ func NewTemplater(conf *Config) *Templater {
 	instance.logger = log.New(os.Stdout, "[GO-TEMPLATER] ", log.Ltime)
 	instance.builder = newTemplaterBuilder(conf.InputDir, conf.OutputDir, instance.logger)
 	instance.watcher = newTemplaterWatcher(conf.InputDir, instance.logger)
+	instance.funcMap = conf.FuncMap
 	instance.bufferPool = new(sync.Pool)
 	instance.bufferPool.New = func() interface{} {
 		byteBuffer := make([]byte, 0)
