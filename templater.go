@@ -38,12 +38,13 @@ func (t *Templater) Stop() {
 }
 
 func (t *Templater) reload() {
-	newTemplate, err := template.ParseGlob(t.outputDir + "/*")
+	newTemplate, err := template.New("").
+		Funcs(t.funcMap).
+		ParseGlob(t.outputDir + "/*")
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
-	newTemplate = newTemplate.Funcs(t.funcMap)
 	t.template = newTemplate
 	t.logger.Println("Templater reloaded")
 }

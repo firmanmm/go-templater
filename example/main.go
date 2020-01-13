@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"log"
 
 	gotemplater "github.com/firmanmm/go-templater"
@@ -8,11 +9,16 @@ import (
 
 func main() {
 	config := gotemplater.NewConfig()
+	config.FuncMap = template.FuncMap{
+		"hello": func(data string) string {
+			return "Hello, " + data
+		},
+	}
 	templater := gotemplater.NewTemplater(config)
 	templater.Run()
 
 	res, err := templater.RenderToString("home.html", map[string]interface{}{
-		"message": "Hello!",
+		"message": "Hi There!",
 		"who":     "A Message",
 	})
 	if err != nil {
@@ -21,7 +27,7 @@ func main() {
 	log.Println(res)
 
 	res, err = templater.RenderToString("home.deep.html", map[string]interface{}{
-		"message": "Hello!",
+		"message": "Deeper Hi There!",
 		"who":     "A Deeper Message",
 	})
 	if err != nil {
