@@ -43,7 +43,7 @@ func (t *Templater) reload() {
 		log.Println(err.Error())
 		return
 	}
-	newTemplate.Funcs(t.funcMap)
+	newTemplate = newTemplate.Funcs(t.funcMap)
 	t.template = newTemplate
 	t.logger.Println("Templater reloaded")
 }
