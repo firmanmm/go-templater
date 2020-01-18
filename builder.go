@@ -42,6 +42,7 @@ func (b *templaterBuilder) initBuild() {
 }
 
 func (b *templaterBuilder) prepareOutputDir() {
+	os.RemoveAll(b.outputDir) // Ignored
 	if err := os.MkdirAll(b.outputDir, 0666); err != nil {
 		b.logger.Fatalln(err)
 	}
